@@ -13,10 +13,19 @@ class Login():
 		md5.update((str(username)+str(password)+"guess*number").encode())
 		return md5.hexdigest()
 
-	def savasql(self):
-		# print(self.var_username.get(),self.var_email.get(),self.var_password.get())
-		passmd5 = self.hash(self.var_username.get(),self.var_password.get())
-		sql.MySQL.sava(self.var_username.get(),passmd5,self.var_email.get())
+	def check_input_is_ok(self):
+		if self.var_username.get().isspace():
+			# messagebox.showinfo(title="提示:", message="Sorry,username not null~~")
+			tishi = Label(self.sgin_up_windows,text="No",font=("宋体",20)).place(x=300,y=300)
+		elif self.var_password.get().isspace():
+			# messagebox.showinfo(title="提示:", message="Sorry,password not null~~")
+			pass
+		elif self.var_email.get().isspace() or self.var_email.get() == "example@email.com":
+			# messagebox.showinfo(title="提示:", message="Sorry,email not null~~")
+			pass
+
+			passmd5 = self.hash(self.var_username.get(),self.var_password.get())
+		# sql.sava(self.var_username.get(),passmd5,self.var_email.get())
 
 	def user_login(self):
 		if self.var_name_input.get() == "Crazy":    # 检查用户名是否在数据库
@@ -60,7 +69,7 @@ class Login():
 		againpass.place(x=250,y=120)
 		inemail = Entry(self.sgin_up_windows,font=("宋体",20),textvariable=self.var_email)
 		inemail.place(x=250,y=170)
-		btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),relief="solid",command=self.savasql).place(x=430,y=230)
+		btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),relief="solid",command=self.check_input_is_ok).place(x=430,y=230)
 
 	def main(self):
 		ws = self.windows.winfo_screenwidth()
@@ -73,7 +82,7 @@ class Login():
 		self.windows.title("Python Guess Number Game (V3.0)")
 		self.windows.overrideredirect(True)
 		image = PhotoImage(file="Welcome.png")
-		img = Label(self.windows,image=image).place(x=160,y=0)
+		img = Label(self.windows,image=image).place(x=170,y=0)
 		usename = Label(self.windows,text="username",font=("宋体",30),fg="#682").place(x=150,y=300)
 		password = Label(self.windows,text="password",font=("宋体",30),fg="#682").place(x=150,y=400)
 		self.var_name_input = StringVar()
@@ -85,7 +94,8 @@ class Login():
 		inpass.place(x=350,y=400)
 		btn = Button(self.windows,text="Login",command=self.user_login,font=("宋体",20),relief="g").place(x=300,y=500)
 		btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="g").place(x=500, y=500)
-		exit_btn = Button(self.windows,text="Exit",command=self.windows.quit,relief="g").place(x=860,y=10)
+		exit_btn = Button(self.windows,text="Exit",command=self.windows.quit,relief="g",fg="#FFFFFF").place(x=860,y=10)
+		version = Label()
 		self.windows.mainloop()
 
 
@@ -103,4 +113,3 @@ class Gamemain():
 if "__main__" == __name__:
 	L = Login()
 	L.main()
-
