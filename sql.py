@@ -1,33 +1,22 @@
 import pymysql
 
-class MySQL():
+def sava(username,password,email):
+	connect_sql = pymysql.connect(user="root",password="crazyrookie",host="127.0.0.1",port=3306)
+	connect_cursor = connect_sql.cursor()
+	sql1 = """
+		CREATE DATABASE IF NOT EXISTS guessnumber DEFAULT CHARACTER SET utf8;
+		USE guessnumber;
 
-	def __init__(self):
-		self.username = "root"
-		self.password = "crazyrookie"
-		self.host = "127.0.0.1"
-		self.port = 3306
+		CREATE TABLE IF NOT EXISTS user(
+			username VARCHAR(88),
+			password VARCHAR(88),
+			email VARCHAR(88)
+		);
+		"""
+	connect_cursor.execute(sql1)
+	connect_sql.commit()
 
-	def sava(self,username,password,email):
-		self.connect_sql = pymysql.connect(user=self.username,password=self.password,host=self.host,port=self.port)
-		self.connect_cursor = self.connect_sql.cursor()
-		sql = """
-			CREATE DATABASE IF NOT EXISTS guessnumber DEFAULT CHARACTER SET utf8;
-			USE guessnumber;
+	sql = "INSERT INTO user (username,password,email) VALUES ('{}','{}','{}')".format(username,password,email)
+	connect_cursor.execute(sql)
+	connect_sql.commit()
 
-			CREATE TABLE IF NOT EXISTS user(
-				username VARCHAR(50),
-				password VARCHAR(88),
-				email VARCHAR(88)
-			);
-			"""
-		self.connect_cursor.execute(sql)
-		self.connect_sql.commit()
-
-		sql = "INSERT INTO user (username,password,email) VALUES ('{}','{}','{}')".format(username,password,email)
-		self.connect_cursor.execute(sql)
-		self.connect_sql.commit()
-
-
-if __name__ == "__main__":
-	MySQL().sava("a","A","adasd")
