@@ -9,12 +9,12 @@ class Login():
 
     def __init__(self):
         self.windows = Tk()
-
+    # 加密密码
     def hash(self,username,password):
         md5 = hashlib.md5()
         md5.update((str(username)+str(password)+"guess*number").encode())
         return md5.hexdigest()
-
+    # 检测输入的是否合法~
     def check_input_is_ok(self):
         # print(self.var_username.get().strip() == "")
         if self.var_username.get().strip() == "":
@@ -37,7 +37,7 @@ class Login():
             messagebox.showinfo(title="提示:",message="用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
             passmd5 = self.hash(self.var_username.get(),self.var_password.get())
             sql.sava(self.var_username.get(),passmd5,self.var_email.get())
-
+    # 登录页面
     def user_login(self):
         if self.var_name_input.get() == "Crazy":    # 检查用户名是否在数据库
             if not self.var_pass_input.get():
@@ -52,7 +52,7 @@ class Login():
             tf = messagebox.askyesno(title="提示:", message="Sorry,username not exists~Sgin Up?")
             if tf == True:
                 self.user_sign_up()
-
+    # 注册页面
     def user_sign_up(self):
         self.sgin_up_windows = Toplevel(self.windows)
         ws = self.windows.winfo_screenwidth()
@@ -86,25 +86,25 @@ class Login():
         btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),bg="#222",relief="solid",command=self.check_input_is_ok).place(x=430,y=230)
 
     def main(self):
-        ws = self.windows.winfo_screenwidth()
-        hs = self.windows.winfo_screenheight()
+        ws = self.windows.winfo_screenwidth()   # 获取显示器显示的宽度
+        hs = self.windows.winfo_screenheight()   # 获取显示器显示的高度
         w = 800
         h = 500
         x = (ws / 2) - (w / 2)
         y = (hs / 2) - (h / 2)
-        self.windows.geometry('%dx%d+%d+%d' % (w, h, x, y))
+        self.windows.geometry('%dx%d+%d+%d' % (w, h, x, y))    # 在显示器中心出现
         self.windows.maxsize("800","500")
         self.windows.minsize("800","500")
         self.windows.title("Python Guess Number Game (V3.0)")
         self.windows.config(bg="#222")
-        if os.name == "posix":
+        if os.name == "posix":    # 因为在Linux环境中,overrideredirect无法正常使用Entry和Button,还会导致卡死
             pass
         else:
-            self.windows.overrideredirect(True)
-            exit_btn = Button(self.windows, text="Exit", command=self.windows.quit, relief="g", fg="#FFFFFF").place(
-                x=750, y=0)
-        image = PhotoImage(file="Welcome.png")
-        img = Label(self.windows,image=image,width=600,bg="#222").place(x=130,y=-30)
+            self.windows.overrideredirect(True)    # 去除边框
+            exit_btn = Button(self.windows, text="Exit", command=self.windows.quit, relief="g", fg="#FFFFFF",bg="#222").place(
+                x=10, y=0)    # Windows环境下使用了overrideredirect之后就没有边框了,自己弄一个退出按钮~
+        image = PhotoImage(file="Welcome.png")    # 设置欢迎界面
+        img = Label(self.windows,image=image,width=700,bg="#222").place(x=130,y=-30)
         usename = Label(self.windows,text="username",font=("宋体",30),fg="#888",bg="#222").place(x=80,y=200)
         password = Label(self.windows,text="password",font=("宋体",30),fg="#888",bg="#222").place(x=80,y=300)
         self.var_name_input = StringVar()
@@ -118,7 +118,6 @@ class Login():
         btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="g",bg="#222").place(x=500, y=400)
         version = Label()
         self.windows.mainloop()
-
 
 class Gamemain():
 
@@ -137,7 +136,7 @@ class Gamemain():
         self.gamewindows.geometry("%dx%d+%d+%d" % (w,h,x,y))
         self.gamewindows.title("Python Guess Number Game (V3.0)")
         self.gamewindows.config(bg="#222")
-        Label(self.gamewindows,text=username).pack()
+        Label(self.gamewindows,text="欢迎您~"+username).pack()
         self.gamewindows.mainloop()
 
 
