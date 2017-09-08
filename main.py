@@ -14,6 +14,7 @@ class Login():
         md5 = hashlib.md5()
         md5.update((str(username)+str(password)+"guess*number").encode())
         return md5.hexdigest()
+
     # 检测输入的是否合法~
     def check_input_is_ok(self):
         # print(self.var_username.get().strip() == "")
@@ -33,21 +34,34 @@ class Login():
             messagebox.showinfo(title="提示:",message="抱歉,密码太弱,请输入6位数以上且带有一个字母~")
         elif re.findall(r'[^a-z0-9]+',self.var_email.get().split("@")[0]) != [] or self.var_email.get().split("@")[-1] not in ["qq.com","gmail.com","163.com"]:
             messagebox.showinfo(title="提示:",message="抱歉,邮箱地址不正确,请检查~")
+        elif sql.check_username(self.var_username.get()) != None:
+            messagebox.showinfo(title="提示:",message="抱歉,用户名已存在~")
+        elif sql.check_email(self.var_email.get()) != None:
+            messagebox.showinfo(title="提示:",message="抱歉,此邮箱已被注册~")
         else:
             messagebox.showinfo(title="提示:",message="用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
             passmd5 = self.hash(self.var_username.get(),self.var_password.get())
             sql.sava(self.var_username.get(),passmd5,self.var_email.get())
     # 登录页面
     def user_login(self):
-        if self.var_name_input.get() == "Crazy":    # 检查用户名是否在数据库
+        if self.var_name_input.get() == sql.check_username(self.var_name_input.get()) or self.var_name_input.get() == sql.check_email(self.var_name_input.get()):    # 检查用户名是否在数据库
             if not self.var_pass_input.get():
-                messagebox.showinfo(title="提示:", message="Sorry,password not null~")
-            elif self.var_pass_input.get() != "123":
-                messagebox.showinfo(title="提示:", message="Sorry,password error~please try again")
+                messagebox.showinfo(title="提示:", message="抱歉,请输入密码~")
             else:
-                messagebox.showinfo(title="提示:", message="Welcome,How are you~ "+self.var_name_input.get())
-                self.windows.destroy()
-                Gamemain().main(self.var_name_input.get())
+                if self.var_name_input.get().split("@")[-1] in ["qq.com","gmail.com","163.com"] and len(self.var_name_input.get().split("@")) == 2:
+                    if self.hash(sql.check_email_password(self.var_name_input.get())[0],self.var_pass_input.get()) != sql.check_password(sql.check_email_password(self.var_name_input.get())[0],self.var_pass_input.get()):
+                        messagebox.showinfo(title="提示:", message="抱歉,密码错误,请重新输入~")
+                    else:
+                        messagebox.showinfo(title="提示:", message="Welcome,How are you~ " + sql.get_username(self.var_name_input.get()))
+                        self.windows.destroy()
+                        Gamemain().main(sql.get_username(self.var_name_input.get()))
+                else:
+                    if sql.check_password(self.var_name_input.get(),self.var_pass_input.get()) == None:
+                        messagebox.showinfo(title="提示:", message="抱歉,密码错误,请重新输入~")
+                    else:
+                        messagebox.showinfo(title="提示:", message="Welcome,How are you~ " + self.var_name_input.get())
+                        self.windows.destroy()
+                        Gamemain().main(self.var_name_input.get())
         else:
             tf = messagebox.askyesno(title="提示:", message="Sorry,username not exists~Sgin Up?")
             if tf == True:
@@ -77,13 +91,87 @@ class Login():
         self.var_email.set("example@email.com")
         inname = Entry(self.sgin_up_windows,font=("宋体",20,),bg="#333",relief="solid",textvariable=self.var_username)
         inname.place(x=240,y=20)
-        inpass = Entry(self.sgin_up_windows,font=("宋体",20),bg="#333",relief="solid",textvariable=self.var_password)
+        inpass = Entry(self.sgin_up_windows,font=("宋体",20),bg="#333",relief="solid",textvariable=self.var_password,show="*")
         inpass.place(x=240,y=70)
-        againpass = Entry(self.sgin_up_windows,font=("宋体",20),bg="#333",relief="solid",textvariable=self.var_againpassword)
+        againpass = Entry(self.sgin_up_windows,font=("宋体",20),bg="#333",relief="solid",textvariable=self.var_againpassword,show="*")
         againpass.place(x=240,y=120)
         inemail = Entry(self.sgin_up_windows,font=("宋体",20),bg="#333",relief="solid",textvariable=self.var_email)
         inemail.place(x=240,y=170)
-        btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),bg="#222",relief="solid",command=self.check_input_is_ok).place(x=430,y=230)
+        btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),bg="#222",relief="solid",command=self.check_input_is_ok,activebackground="#222").place(x=430,y=230)
+
+    # 检查新修改的密码是否ok
+    def check_new_pass_is_ok(self):
+        if self.new_pass.get().strip() == "":
+            messagebox.showinfo(title="提示", message="抱歉,请输入密码~")
+        elif self.agagin_pass.get().strip() == "":
+            messagebox.showinfo(title="提示",message="抱歉,请确认密码~please agagin~")
+        elif self.new_pass.get() != self.agagin_pass.get():
+            messagebox.showinfo(title="提示",message="抱歉,两次输入的密码不相同~")
+        elif len(self.new_pass.get()) <= 6 or [i for i in self.new_pass.get() if i.isalpha()] == []:
+            messagebox.showinfo(title="提示:",message="抱歉,密码太弱,请输入6位数以上且带有一个字母~")
+        else:
+            sql.change_pass(self.hash(self.forget_name.get(),self.new_pass.get()),self.forget_name.get(),self.forget_email.get())
+            messagebox.showinfo(title="提示",message=" 修改成功!   ")
+
+    # 更改密码
+    def change_password(self):
+        if sql.check_forget_pass(self.forget_name.get(),self.forget_email.get()) == None:
+            messagebox.showinfo(title="提示:",message="用户名不存在或邮箱错误~")
+        else:
+            self.change_pass_windows = Toplevel(self.windows)
+            ws = self.change_pass_windows.winfo_screenwidth()
+            hs = self.change_pass_windows.winfo_screenheight()
+            w = 450
+            h = 300
+            x = (ws / 2) - (w / 2)
+            y = (hs / 2) - (h / 2)
+            self.change_pass_windows.geometry("%dx%d+%d+%d" % (w,h,x,y))
+            self.change_pass_windows.config(bg="#222")
+            self.change_pass_windows.maxsize("450","300")
+            self.change_pass_windows.minsize("450","300")
+            self.change_pass_windows.title("Change Password~")
+            icon = Label(self.change_pass_windows,text="Change Password",font=("微软雅黑",30),bg="#222",fg="#568").pack()
+            new_pass_label = Label(self.change_pass_windows,text="New Password",font=("楷体",15),bg="#222").place(x=30,y=100)
+            agagin_pass_label = Label(self.change_pass_windows,text="Again Password",font=("楷体",15),bg="#222").place(x=20,y=150)
+            self.new_pass = StringVar()
+            self.agagin_pass = StringVar()
+            new_pass_btn = Entry(self.change_pass_windows,show="*",font=("楷体",15),relief="solid",bg="#222",textvariable=self.new_pass)
+            new_pass_btn.place(x=190,y=100)
+            agagin_pass_btn = Entry(self.change_pass_windows,show="*",font=("楷体",15),relief="solid",bg="#222",textvariable=self.agagin_pass)
+            agagin_pass_btn.place(x=190,y=150)
+            btn = Button(self.change_pass_windows,text="确认",font=("楷体",10),relief="solid",activebackground="#222",bg="#222",command=self.check_new_pass_is_ok).place(x=380,y=230)
+
+    # 忘记密码
+    def forget_password(self):
+        self.forget_pass_windows = Toplevel(self.windows)
+        ws = self.forget_pass_windows.winfo_screenwidth()
+        hs = self.forget_pass_windows.winfo_screenheight()
+        w = 600
+        h = 300
+        x = (ws / 2) - (w / 2)
+        y = (hs / 2) - (h / 2)
+        self.forget_pass_windows.geometry("%dx%d+%d+%d" % (w,h,x,y))
+        self.forget_pass_windows.maxsize("600","300")
+        self.forget_pass_windows.minsize("600","300")
+        self.forget_pass_windows.title("Forget Password")
+        self.forget_pass_windows.config(bg="#222")
+        labelname = Label(self.forget_pass_windows,text="Username",bg="#222",font=("微软雅黑",20)).place(x=50,y=50)
+        labelemail = Label(self.forget_pass_windows,text="Email",bg="#222",font=("微软雅黑",20)).place(x=110,y=120)
+        self.forget_name = StringVar()
+        self.forget_email = StringVar()
+        if self.var_name_input.get() == "example@email.com":
+            pass
+        elif self.var_name_input.get().split("@")[-1] in ["qq.com", "gmail.com", "163.com"] and len(self.var_name_input.get().split("@")) == 2:
+            self.forget_email.set(self.var_name_input.get())
+        elif self.var_name_input.get().split("@")[-1] not in ["qq.com", "gmail.com", "163.com"]:
+            self.forget_name.set(self.var_name_input.get())
+        else:
+            pass
+        inname = Entry(self.forget_pass_windows,textvariable=self.forget_name,font=("微软雅黑",20),bg="#222",relief="solid")
+        inname.place(x=200,y=50)
+        inemail = Entry(self.forget_pass_windows,textvariable=self.forget_email,font=("微软雅黑",20),bg="#222",relief="solid")
+        inemail.place(x=200,y=120)
+        find_btn = Button(self.forget_pass_windows,text="更改密码",font=("微软雅黑",15),relief="solid",activebackground="#222",bg="#222",fg="#FFF",command=self.change_password).place(x=450,y=200)
 
     def main(self):
         ws = self.windows.winfo_screenwidth()   # 获取显示器显示的宽度
@@ -114,11 +202,13 @@ class Login():
         self.var_pass_input = StringVar()
         inpass = Entry(show="❤",textvariable=self.var_pass_input,font=("宋体",30),relief="solid",bg="#222")
         inpass.place(x=300,y=300)
-        btn = Button(self.windows,text="Login",command=self.user_login,font=("宋体",20),relief="g",bg="#222").place(x=300,y=400)
-        btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="g",bg="#222").place(x=500, y=400)
+        forget_pass_btn = Button(self.windows,text="forget password?",font=("楷体",6),relief="solid",bg="#222",fg="#FFF",command=self.forget_password,activebackground="#222").place(x=670,y=370)
+        btn = Button(self.windows,text="Login",command=self.user_login,font=("宋体",20),relief="g",bg="#222",fg="#fff",activebackground="#222").place(x=300,y=400)
+        btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="g",bg="#222",fg="#fff",activebackground="#222").place(x=500, y=400)
         version = Label()
         self.windows.mainloop()
 
+# 游戏界面
 class Gamemain():
 
     def __init__(self):
