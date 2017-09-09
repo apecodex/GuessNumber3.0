@@ -9,7 +9,6 @@ def sava(username,password,email):
     sql1 = """
         CREATE DATABASE IF NOT EXISTS guessnumber DEFAULT CHARACTER SET utf8;
         USE guessnumber;
-
         CREATE TABLE IF NOT EXISTS user(
             username VARCHAR(88),
             password VARCHAR(88),
@@ -88,3 +87,4 @@ def change_pass(new_pass,username,email):
 # print(check_email_password("123456@qq.com")[1] == md5.hexdigest())
 # print(get_username("1473018671@qq.com"))
 # print(check_forget_pass("Crazy","1473018671@qq.com"))
+# print(check_email("1473018671@163.com"))
