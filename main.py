@@ -1,18 +1,22 @@
 from tkinter import *
 from tkinter import messagebox
 import hashlib
-import sql
-import os
-import re
+from sql import Mysql,Sqlite
+import os,re
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 import random
 
-class Login():
+
+# 默认是的python自带的Sqlite3数据库
+# 如果需要换MySQL的请先安装模块 pymysql 和MySQL本地环境,确保能够在本地使用
+# 安装完模块和配置好本地MySQL之后,将类 Login 的继承者改为Mysql
+class Login(Mysql):    # 替换Mysql
 
     def __init__(self):
         self.windows = Tk()
+        Mysql.__init__(self)    # 如果要换数据库~记得替换这里~
 
     # 加密密码
     def hash(self,username,password):
@@ -48,7 +52,7 @@ class Login():
             self.information_text.delete(0, END)
             self.information_text.insert(END, "抱歉,你还没输入邮箱呐~")
         else:
-            if sql.check_email(self.var_email.get()) != None:
+            if self.check_email(self.var_email.get()) != None:
                 self.information_text.delete(0, END)
                 self.information_text.insert(END, "抱歉,此邮箱已被注册~")
             elif self.check_email_is_ok(self.var_email.get()) == None:
@@ -87,10 +91,10 @@ class Login():
         elif self.check_email_is_ok(self.var_email.get()) == None:
             self.information_text.delete(0, END)
             self.information_text.insert(END, "抱歉,邮箱地址不正确,请检查~")
-        elif sql.check_username(self.var_username.get()) != None:
+        elif self.check_username(self.var_username.get()) != None:
             self.information_text.delete(0, END)
             self.information_text.insert(END, "抱歉,用户名已存在~")
-        elif sql.check_email(self.var_email.get()) != None:
+        elif self.check_email(self.var_email.get()) != None:
             self.information_text.delete(0, END)
             self.information_text.insert(END, "抱歉,此邮箱已被注册~")
         elif self.var_verification_code.get().strip() == "":
@@ -101,23 +105,23 @@ class Login():
             self.information_text.insert(END, "验证码错误~")
         else:
             passmd5 = self.hash(self.var_username.get(),self.var_password.get())
-            sql.sava(self.var_username.get(),passmd5,self.var_email.get())
+            self.sava(self.var_username.get(),passmd5,self.var_email.get())
             messagebox.showinfo(title="提示:", message="用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
     # 登录页面
     def user_login(self):
-        if self.var_name_input.get() == sql.check_username(self.var_name_input.get()) or self.var_name_input.get() == sql.check_email(self.var_name_input.get()):    # 检查用户名是否在数据库
+        if self.var_name_input.get() == self.check_username(self.var_name_input.get()) or self.var_name_input.get() == self.check_email(self.var_name_input.get()):    # 检查用户名是否在数据库
             if not self.var_pass_input.get():
                 messagebox.showinfo(title="提示:", message="抱歉,请输入密码~")
             else:
                 if self.check_email_is_ok(self.var_name_input.get()) != None:
-                    if self.hash(sql.check_email_password(self.var_name_input.get())[0],self.var_pass_input.get()) != sql.check_password(sql.check_email_password(self.var_name_input.get())[0],self.var_pass_input.get()):
+                    if self.hash(self.check_email_password(self.var_name_input.get())[0],self.var_pass_input.get()) != self.check_password(self.check_email_password(self.var_name_input.get())[0],self.var_pass_input.get()):
                         messagebox.showinfo(title="提示:", message="抱歉,密码错误,请重新输入~")
                     else:
-                        messagebox.showinfo(title="提示:", message="Welcome,How are you~ " + sql.get_username(self.var_name_input.get()))
+                        messagebox.showinfo(title="提示:", message="Welcome,How are you~ " + self.get_username(self.var_name_input.get()))
                         self.windows.destroy()
-                        Gamemain().main(sql.get_username(self.var_name_input.get()))
+                        Gamemain().main(self.get_username(self.var_name_input.get()))
                 else:
-                    if sql.check_password(self.var_name_input.get(),self.var_pass_input.get()) == None:
+                    if self.check_password(self.var_name_input.get(),self.var_pass_input.get()) == None:
                         messagebox.showinfo(title="提示:", message="抱歉,密码错误,请重新输入~")
                     else:
                         messagebox.showinfo(title="提示:", message="Welcome,How are you~ " + self.var_name_input.get())
