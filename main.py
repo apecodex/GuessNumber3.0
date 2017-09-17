@@ -12,11 +12,11 @@ import random
 # 默认是的python自带的Sqlite3数据库
 # 如果需要换MySQL的请先安装模块 pymysql 和MySQL本地环境,确保能够在本地使用
 # 安装完模块和配置好本地MySQL之后,将类 Login 的继承者改为Mysql
-class Login(Mysql):    # 替换Mysql
+class Login(Sqlite):    # 替换Mysql
 
     def __init__(self):
         self.windows = Tk()
-        Mysql.__init__(self)    # 如果要换数据库~记得替换这里~
+        Sqlite.__init__(self)    # 如果要换数据库~记得替换这里~
 
     # 加密密码
     def hash(self,username,password):
@@ -28,6 +28,83 @@ class Login(Mysql):    # 替换Mysql
     def check_email_is_ok(self,email):
         pattern = re.compile(r'\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}')
         return pattern.search(email)
+
+    def aboutme(self):
+        self.aboutme_windows = Toplevel(self.windows)
+        self.aboutme_windows.wm_attributes('-topmost',1)
+        self.aboutme_windows.resizable(False,False)
+        self.aboutme_windows.iconbitmap(default="img/head.ico")
+        ws = self.aboutme_windows.winfo_screenwidth()
+        hs = self.aboutme_windows.winfo_screenheight()
+        w = 300
+        h = 300
+        x = (ws / 2) - (w / 2)
+        y = (hs / 2) - (h / 2)
+        self.aboutme_windows.geometry("%dx%d+%d+%d" % (w,h,x,y))
+        self.aboutme_windows.title("关于我")
+        self.aboutme_windows.config(bg="#222")
+        text = Text(self.aboutme_windows,bg="#222",fg="#FFF",font=("楷体",15),relief="flat")
+        text.pack(anchor='center')
+        text.insert(END,"作者:\nCrazyRookie\n\n个人博客:\nwww.liuyangxiong.top\n\nEmail:\ncrazyrookie@163.com\n\nQQ:\n1473018671\n\n\n请勿非法使用,仅供学习！")
+        text.config(state=DISABLED)
+
+    def send_feedback(self):
+        if self.subject.get().strip() == "":
+            self.feedback_listbox.delete(0,END)
+            self.feedback_listbox.insert(END,"抱歉,请输入标题~")
+        elif self.calldef.get().strip() == "" or self.calldef.get() == "QQ/Email":
+            self.feedback_listbox.delete(0, END)
+            self.feedback_listbox.insert(END, "抱歉,请输入联系方式")
+        elif self.feedbacktext_text.get("0.0",END).strip() == "":
+            self.feedback_listbox.delete(0, END)
+            self.feedback_listbox.insert(END, "抱歉,请输入内容~")
+        else:
+            serder = "2905217710@qq.com"
+            receiver = "crazyrookie@163.com"
+            smtp_server = "smtp.qq.com"
+            username = "2905217710@qq.com"
+            password = "cswqzrqkhzzkdgjg"
+            msg = MIMEText("反馈用户联系方式:{}\n\n{}".format(self.calldef.get(),self.feedbacktext_text.get("0.0",END)), 'plain', 'utf-8')
+            msg['From'] = serder
+            msg['To'] = receiver
+            msg['Subject'] = Header(u"猜数字游戏用户反馈,标题:{}".format(self.subject.get()), "utf-8").encode()
+            smtp = smtplib.SMTP_SSL(smtp_server, 465)
+            smtp.login(username, password)
+            smtp.sendmail(serder, receiver, msg.as_string())
+            self.feedback_listbox.delete(0, END)
+            self.feedback_listbox.config(fg="#FFF")
+            self.feedback_listbox.insert(END, "已发送!感谢您的建议~~")
+
+    def feedback(self):
+        self.subject = StringVar()
+        self.calldef = StringVar()
+        self.calldef.set("QQ/Email")
+        # self.feedback_text = StringVar()
+        self.feedback_windows = Toplevel(self.windows)
+        self.feedback_windows.wm_attributes('-topmost',1)
+        self.feedback_windows.resizable(False,False)
+        self.feedback_windows.iconbitmap(default="img/head.ico")
+        self.feedback_windows.config(bg="#222")
+        ws = self.feedback_windows.winfo_screenwidth()
+        hs = self.feedback_windows.winfo_screenheight()
+        w = 450
+        h = 450
+        x = (ws / 2) - (w / 2)
+        y = (hs / 2) - (h / 2)
+        self.feedback_windows.geometry("%dx%d+%d+%d" % (w,h,x,y))
+        subject_label = Label(self.feedback_windows,text="标题",bg="#222",fg="#FFF",relief="flat",font=("楷体",20)).place(x=0,y=10)
+        subject_entry = Entry(self.feedback_windows,bg="#333",fg="#888",relief="flat",font=("楷体",20),width=22,textvariable=self.subject)
+        subject_entry.place(x=125,y=10)
+        calldef_label = Label(self.feedback_windows,text="联系方式",bg="#222",fg="#FFF",relief="flat",font=("楷体",20)).place(x=0,y=50)
+        calldef_entry = Entry(self.feedback_windows,bg="#333",fg="#888",relief="flat",font=("楷体",20),width=18,textvariable=self.calldef)
+        calldef_entry.place(x=125,y=50)
+        feedbacktext_lable = Label(self.feedback_windows,text="内容",bg="#222",fg="#FFF",relief="flat",font=("楷体",20)).place(x=0,y=100)
+        self.feedbacktext_text = Text(self.feedback_windows,bg="#222",fg="#FFF",relief="solid",width=61,height=20)
+        self.feedbacktext_text.place(x=10,y=140)
+        send_btn = Button(self.feedback_windows,text=" 提\t交 ",bg="#222",fg="#FFF",relief="solid",font=("楷体",15),command=self.send_feedback).place(x=300,y=410)
+        self.feedback_listbox = Listbox(self.feedback_windows,bg="#222",fg="red",relief="solid",font=("楷体",15),height=1)
+        self.feedback_listbox.place(x=20,y=420)
+
 
     # 发送邮箱验证码
     def send_email(self,email,name):
@@ -44,7 +121,7 @@ class Login(Mysql):    # 替换Mysql
         smtp = smtplib.SMTP_SSL(smtp_server, 465)
         smtp.login(username, password)
         smtp.sendmail(serder, receiver, msg.as_string())
-        print(self.randomslist)
+        # print(self.randomslist)
 
     # 发送邮箱验证码
     def sgin_send_email(self):
@@ -107,6 +184,7 @@ class Login(Mysql):    # 替换Mysql
             passmd5 = self.hash(self.var_username.get(),self.var_password.get())
             self.sava(self.var_username.get(),passmd5,self.var_email.get())
             messagebox.showinfo(title="提示:", message="用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
+
     # 登录页面
     def user_login(self):
         if self.var_name_input.get() == self.check_username(self.var_name_input.get()) or self.var_name_input.get() == self.check_email(self.var_name_input.get()):    # 检查用户名是否在数据库
@@ -134,23 +212,26 @@ class Login(Mysql):    # 替换Mysql
     # 注册页面
     def user_sign_up(self):
         self.sgin_up_windows = Toplevel(self.windows)
+        self.sgin_up_windows.wm_attributes('-topmost',1)
+        self.sgin_up_windows.resizable(False,False)
+        self.sgin_up_windows.iconbitmap(default="img/head.ico")
         ws = self.windows.winfo_screenwidth()
         hs = self.windows.winfo_screenheight()
         w = 600
-        h = 450
+        h = 460
         x = (ws / 2) - (w / 2)
         y = (hs / 2) - (h / 2)
         self.sgin_up_windows.geometry('%dx%d+%d+%d' % (w, h, x, y))
-        self.sgin_up_windows.maxsize("600","450")
-        self.sgin_up_windows.minsize("600","450")
+        self.sgin_up_windows.maxsize("600","420")
+        self.sgin_up_windows.minsize("600","420")
         self.sgin_up_windows.title("Sgin Up")
         self.sgin_up_windows.config(bg="#222")
         Label(self.sgin_up_windows,text="Sgin Up",font=("楷体",60),bg="#222",fg="#fbd").pack(side="bottom")
-        username = Label(self.sgin_up_windows,text="New Username:",font=("宋体",20),bg="#222").place(x=25,y=20)
-        password = Label(self.sgin_up_windows,text="Password:",font=("宋体",20),bg="#222").place(x=95,y=70)
-        passagain = Label(self.sgin_up_windows,text="Again Password:",font=("宋体",20),bg="#222").place(x=17,y=120)
-        email = Label(self.sgin_up_windows,text="Email:",font=("宋体",20),bg="#222").place(x=147,y=170)
-        self.varification_code = Label(self.sgin_up_windows,text="Code:",font=("宋体",25),bg="#222").place(x=150,y=240)
+        username = Label(self.sgin_up_windows,text="New Username:",font=("宋体",20),bg="#222").place(x=40,y=20)
+        password = Label(self.sgin_up_windows,text="Password:",font=("宋体",20),bg="#222").place(x=97,y=70)
+        passagain = Label(self.sgin_up_windows,text="Again Password:",font=("宋体",20),bg="#222").place(x=13,y=120)
+        email = Label(self.sgin_up_windows,text="Email:",font=("宋体",20),bg="#222").place(x=139,y=170)
+        self.varification_code = Label(self.sgin_up_windows,text="Code:",font=("宋体",25),bg="#222").place(x=140,y=230)
         self.var_username = StringVar()
         self.var_password = StringVar()
         self.var_againpassword = StringVar()
@@ -167,7 +248,7 @@ class Login(Mysql):    # 替换Mysql
         inemail = Entry(self.sgin_up_windows,font=("宋体",20),bg="#333",relief="solid",textvariable=self.var_email)
         inemail.place(x=240,y=170)
         inverification_code = Entry(self.sgin_up_windows,font=("宋体",25),insertbackground="#000",width=5,bg="#333",relief="solid",textvariable=self.var_verification_code)
-        inverification_code.place(x=240,y=240)
+        inverification_code.place(x=240,y=230)
         code_btn = Button(self.sgin_up_windows,font=("宋体",12),text="发送",bg="#222",width=6,relief="solid",command=self.sgin_send_email).place(x=530,y=170)
         btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),bg="#222",relief="solid",command=self.check_input_is_ok,activebackground="#222").place(x=430,y=230)
         self.information_text = Listbox(self.sgin_up_windows,bg="#222",fg="red",width=45,height=1,font=("微软雅黑",15))
@@ -192,14 +273,14 @@ class Login(Mysql):    # 替换Mysql
             self.change_pass_text.delete(0, END)
             self.change_pass_text.insert(END, "抱歉,密码太弱,请输入6位数以上且带有一个字母~~")
         else:
-            sql.change_pass(self.hash(self.forget_name.get(),self.new_pass.get()),self.forget_name.get(),self.forget_email.get())
+            self.change_pass(self.hash(self.forget_name.get(),self.new_pass.get()),self.forget_name.get(),self.forget_email.get())
             # messagebox.showinfo(title="提示",message=" 修改成功!   ")
             self.change_pass_text.delete(0, END)
             self.change_pass_text.config(fg="#FFF")
             self.change_pass_text.insert(END, "修改成功!")
 
     def forget_send_email(self):
-        if sql.check_email(self.forget_email.get()) == None:
+        if self.check_email(self.forget_email.get()) == None:
             self.find_text.delete(0, END)
             self.find_text.insert(END, "邮箱不存在~")
         else:
@@ -213,7 +294,7 @@ class Login(Mysql):    # 替换Mysql
         if self.var_name_input.get().strip() == "":
             self.find_text.delete(0, END)
             self.find_text.insert(END, "用户名不得为空~")
-        elif sql.check_forget_pass(self.forget_name.get(),self.forget_email.get()) == None:
+        elif self.check_forget_pass(self.forget_name.get(),self.forget_email.get()) == None:
             self.find_text.delete(0,END)
             self.find_text.insert(END,"用户名不存在或邮箱错误~")
         elif self.find_code.get().strip() == "":
@@ -224,6 +305,9 @@ class Login(Mysql):    # 替换Mysql
             self.find_text.insert(END, "验证码错误~")
         else:
             self.change_pass_windows = Toplevel(self.windows)
+            self.change_pass_windows.wm_attributes('-topmost',1)
+            self.change_pass_windows.resizable(False,False)
+            self.change_pass_windows.iconbitmap(default="img/head.ico")
             ws = self.change_pass_windows.winfo_screenwidth()
             hs = self.change_pass_windows.winfo_screenheight()
             w = 450
@@ -251,6 +335,9 @@ class Login(Mysql):    # 替换Mysql
     # 忘记密码
     def forget_password(self):
         self.forget_pass_windows = Toplevel(self.windows)
+        self.forget_pass_windows.wm_attributes('-topmost',1)
+        self.forget_pass_windows.resizable(False,False)
+        self.forget_pass_windows.iconbitmap(default="img/head.ico")
         ws = self.forget_pass_windows.winfo_screenwidth()
         hs = self.forget_pass_windows.winfo_screenheight()
         w = 600
@@ -288,6 +375,8 @@ class Login(Mysql):    # 替换Mysql
         self.find_text.place(x=50,y=250)
 
     def main(self):
+        self.windows.iconbitmap(default="img/head.ico")
+        self.windows.wm_attributes('-topmost',1)   # 将窗口顶置~
         ws = self.windows.winfo_screenwidth()   # 获取显示器显示的宽度
         hs = self.windows.winfo_screenheight()   # 获取显示器显示的高度
         w = 800
@@ -297,15 +386,15 @@ class Login(Mysql):    # 替换Mysql
         self.windows.geometry('%dx%d+%d+%d' % (w, h, x, y))    # 在显示器中心出现
         self.windows.maxsize("800","500")
         self.windows.minsize("800","500")
-        self.windows.title("Python Guess Number Game (V3.0)")
+        self.windows.title("Python Guess Number Game")
         self.windows.config(bg="#222")
         if os.name == "posix":    # 因为在Linux环境中,overrideredirect无法正常使用Entry和Button,还会导致卡死
             pass
         else:
             self.windows.overrideredirect(True)    # 去除边框
-            exit_btn = Button(self.windows, text="Exit", command=self.windows.quit, relief="g", fg="#FFFFFF",bg="#222").place(
+            exit_btn = Button(self.windows, text="Exit", command=self.windows.quit, relief="flat", fg="#FFFFFF",bg="#222",font=("楷体",15)).place(
                 x=10, y=0)    # Windows环境下使用了overrideredirect之后就没有边框了,自己弄一个退出按钮~
-        image = PhotoImage(file="Welcome.png")    # 设置欢迎界面
+        image = PhotoImage(file="img/Welcome.png")    # 设置欢迎界面
         img = Label(self.windows,image=image,width=700,bg="#222").place(x=130,y=-30)
         usename = Label(self.windows,text="username",font=("宋体",30),fg="#888",bg="#222").place(x=80,y=200)
         password = Label(self.windows,text="password",font=("宋体",30),fg="#888",bg="#222").place(x=80,y=300)
@@ -317,9 +406,11 @@ class Login(Mysql):    # 替换Mysql
         inpass = Entry(show="❤",textvariable=self.var_pass_input,font=("宋体",30),relief="solid",bg="#222")
         inpass.place(x=300,y=300)
         forget_pass_btn = Button(self.windows,text="forget password?",font=("楷体",10),relief="solid",bg="#222",fg="#FFF",command=self.forget_password,activebackground="#222").place(x=580,y=350)
-        btn = Button(self.windows,text="Login",command=self.user_login,font=("宋体",20),relief="g",bg="#222",fg="#fff",activebackground="#222").place(x=300,y=400)
-        btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="g",bg="#222",fg="#fff",activebackground="#222").place(x=500, y=400)
-        version = Label()
+        btn = Button(self.windows,text="Login",command=self.user_login,font=("宋体",20),relief="flat",bg="#222",fg="#fff",activebackground="#222").place(x=300,y=400)
+        btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="flat",bg="#222",fg="#fff",activebackground="#222").place(x=500, y=400)
+        version = Label(self.windows,text="版本：V3.0.1",bg="#222",fg="#FFF").place(x=0,y=480)
+        aboutme = Button(self.windows,text="关于我",bg="#222",fg="#FFF",relief="flat",activebackground="#222",command=self.aboutme).place(x=80,y=477)
+        feedback = Button(self.windows,text="反馈",bg="#222",fg="#FFF",relief="flat",activebackground="#222",command=self.feedback).place(x=135,y=477)
         self.windows.mainloop()
 
 # 游戏界面
