@@ -2,11 +2,12 @@ from tkinter import *
 from tkinter import messagebox
 import hashlib
 from sql import Mysql,Sqlite
-import os,re
+import os,re,time
 import smtplib
 from email.mime.text import MIMEText
 from email.header import Header
 import random
+import threading
 
 
 # 默认是的python自带的Sqlite3数据库
@@ -29,7 +30,47 @@ class Login(Sqlite):    # 替换Mysql
         pattern = re.compile(r'\w[-\w.+]*@([A-Za-z0-9][-A-Za-z0-9]+\.)+[A-Za-z]{2,14}')
         return pattern.search(email)
 
+    def sgin_email_daojishi_threading(self):
+        th = threading.Thread(target=self.sgin_daojishi)
+        th.setDaemon(True)
+        th.start()
+
+    def forget_email_daojishi_threading(self):
+        th = threading.Thread(target=self.forget_daojishi)
+        th.setDaemon(True)
+        th.start()
+
+    def sgin_daojishi(self):
+        try:
+            times = 60
+            while times >= 1:
+                times-=1
+                time.sleep(1)
+                self.code_btn.config(text=times)
+            self.code_btn.config(text="发送")
+            self.code_btn.config(state=NORMAL)
+        except TclError:
+            pass
+
+    def forget_daojishi(self):
+        try:
+            times = 60
+            while times >= 1:
+                times -= 1
+                time.sleep(1)
+                self.find_code_btn.config(fg="#FFF")
+                self.find_code_btn.config(text=times)
+            self.find_code_btn.config(text="发送")
+            self.find_code_btn.config(state=NORMAL)
+        except TclError:
+            pass
+
+    def aboutme_windows_exit(self):
+        self.aboutmes.config(state=NORMAL)    # 获取到了'关于我'窗口的关闭事件之后，按钮将恢复正常使用
+        self.aboutme_windows.destroy()    # '关于我'窗口页面关闭
+
     def aboutme(self):
+        self.aboutmes.config(state=DISABLED)# 点了之后按钮将不可用,防止多次跳出
         self.aboutme_windows = Toplevel(self.windows)
         self.aboutme_windows.wm_attributes('-topmost',1)
         self.aboutme_windows.resizable(False,False)
@@ -47,6 +88,7 @@ class Login(Sqlite):    # 替换Mysql
         text.pack(anchor='center')
         text.insert(END,"作者:\nCrazyRookie\n\n个人博客:\nwww.liuyangxiong.top\n\nEmail:\ncrazyrookie@163.com\n\nQQ:\n1473018671\n\n\n请勿非法使用,仅供学习！")
         text.config(state=DISABLED)
+        self.aboutme_windows.protocol("WM_DELETE_WINDOW",self.aboutme_windows_exit)   # 关闭事件
 
     def send_feedback(self):
         if self.subject.get().strip() == "":
@@ -75,7 +117,12 @@ class Login(Sqlite):    # 替换Mysql
             self.feedback_listbox.config(fg="#FFF")
             self.feedback_listbox.insert(END, "已发送!感谢您的建议~~")
 
+    def seed_feedback_windows_exit(self):
+        self.feedbacks.config(state=NORMAL)    # 获取到了'关于我'窗口的关闭事件之后，按钮将恢复正常使用
+        self.feedback_windows.destroy()    # '关于我'窗口页面关闭
+
     def feedback(self):
+        self.feedbacks.config(state=DISABLED)    # 点了之后按钮将不可用,防止多次跳出
         self.subject = StringVar()
         self.calldef = StringVar()
         self.calldef.set("QQ/Email")
@@ -102,8 +149,9 @@ class Login(Sqlite):    # 替换Mysql
         self.feedbacktext_text = Text(self.feedback_windows,bg="#222",fg="#FFF",relief="solid",width=61,height=20)
         self.feedbacktext_text.place(x=10,y=140)
         send_btn = Button(self.feedback_windows,text=" 提\t交 ",bg="#222",fg="#FFF",relief="solid",font=("楷体",15),command=self.send_feedback).place(x=300,y=410)
-        self.feedback_listbox = Listbox(self.feedback_windows,bg="#222",fg="red",relief="solid",font=("楷体",15),height=1)
+        self.feedback_listbox = Listbox(self.feedback_windows,bg="#222",fg="red",relief="flat",font=("楷体",15),height=1)
         self.feedback_listbox.place(x=20,y=420)
+        self.feedback_windows.protocol("WM_DELETE_WINDOW",self.seed_feedback_windows_exit)    # 关闭事件
 
 
     # 发送邮箱验证码
@@ -125,6 +173,7 @@ class Login(Sqlite):    # 替换Mysql
 
     # 发送邮箱验证码
     def sgin_send_email(self):
+
         if self.var_email.get().strip() == "" or self.var_email.get() == "example@email.com":
             self.information_text.delete(0, END)
             self.information_text.insert(END, "抱歉,你还没输入邮箱呐~")
@@ -136,10 +185,13 @@ class Login(Sqlite):    # 替换Mysql
                 self.information_text.delete(0, END)
                 self.information_text.insert(END, "抱歉,邮箱地址错误")
             else:
+                self.sgin_up_windows.wm_attributes('-topmost', 1)
                 self.send_email(self.var_email.get(),self.var_username.get())
+                self.code_btn.config(state=DISABLED)
                 self.information_text.delete(0, END)
                 self.information_text.insert(END, "已成功发送,请打开邮箱查看验证码~")
                 self.information_text.config(fg="#FFF")
+                self.sgin_email_daojishi_threading()
 
     # 检测输入的是否合法~
     def check_input_is_ok(self):
@@ -183,7 +235,10 @@ class Login(Sqlite):    # 替换Mysql
         else:
             passmd5 = self.hash(self.var_username.get(),self.var_password.get())
             self.sava(self.var_username.get(),passmd5,self.var_email.get())
-            messagebox.showinfo(title="提示:", message="用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
+            # messagebox.showinfo(title="提示:", message="用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
+            self.information_text.delete(0, END)
+            self.information_text.config(fg="#FFF")
+            self.information_text.insert(END, "用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
 
     # 登录页面
     def user_login(self):
@@ -209,8 +264,14 @@ class Login(Sqlite):    # 替换Mysql
             tf = messagebox.askyesno(title="提示:", message="Sorry,username not exists~Sgin Up?")
             if tf == True:
                 self.user_sign_up()
+
+    def sign_btn_state(self):
+        self.sgin_btn.config(state=NORMAL)
+        self.sgin_up_windows.destroy()
     # 注册页面
     def user_sign_up(self):
+        # self.login_btn.config(state=DISABLED)  # 点了之后按钮将不可用,防止多次跳出
+        self.sgin_btn.config(state=DISABLED)  # 点了之后按钮将不可用,防止多次跳出
         self.sgin_up_windows = Toplevel(self.windows)
         self.sgin_up_windows.wm_attributes('-topmost',1)
         self.sgin_up_windows.resizable(False,False)
@@ -249,10 +310,12 @@ class Login(Sqlite):    # 替换Mysql
         inemail.place(x=240,y=170)
         inverification_code = Entry(self.sgin_up_windows,font=("宋体",25),insertbackground="#000",width=5,bg="#333",relief="solid",textvariable=self.var_verification_code)
         inverification_code.place(x=240,y=230)
-        code_btn = Button(self.sgin_up_windows,font=("宋体",12),text="发送",bg="#222",width=6,relief="solid",command=self.sgin_send_email).place(x=530,y=170)
+        self.code_btn = Button(self.sgin_up_windows,font=("宋体",12),text="发送",bg="#222",width=6,relief="solid",command=self.sgin_send_email)
+        self.code_btn.place(x=530,y=170)
         btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),bg="#222",relief="solid",command=self.check_input_is_ok,activebackground="#222").place(x=430,y=230)
-        self.information_text = Listbox(self.sgin_up_windows,bg="#222",fg="red",width=45,height=1,font=("微软雅黑",15))
+        self.information_text = Listbox(self.sgin_up_windows,bg="#222",fg="red",width=45,height=1,font=("微软雅黑",15),relief="flat")
         self.information_text.place(x=30, y=300)
+        self.sgin_up_windows.protocol("WM_DELETE_WINDOW",self.sign_btn_state)
 
     # 检查新修改的密码是否ok
     def check_new_pass_is_ok(self):
@@ -279,15 +342,18 @@ class Login(Sqlite):    # 替换Mysql
             self.change_pass_text.config(fg="#FFF")
             self.change_pass_text.insert(END, "修改成功!")
 
+
     def forget_send_email(self):
         if self.check_email(self.forget_email.get()) == None:
             self.find_text.delete(0, END)
             self.find_text.insert(END, "邮箱不存在~")
         else:
             self.send_email(self.forget_email.get(),self.forget_name.get())
+            self.find_code_btn.config(state=DISABLED)
             self.find_text.delete(0,END)
             self.find_text.config(fg="#FFF")
             self.find_text.insert(END,"验证码已发送，请查看邮箱~")
+            self.forget_email_daojishi_threading()
 
     # 更改密码
     def change_password(self):
@@ -329,11 +395,15 @@ class Login(Sqlite):    # 替换Mysql
             agagin_pass_btn = Entry(self.change_pass_windows,show="*",font=("楷体",15),relief="solid",bg="#222",textvariable=self.agagin_pass)
             agagin_pass_btn.place(x=190,y=150)
             btn = Button(self.change_pass_windows,text="确认",font=("楷体",10),relief="solid",activebackground="#222",bg="#222",command=self.check_new_pass_is_ok).place(x=380,y=250)
-            self.change_pass_text = Listbox(self.change_pass_windows,bg="#222",fg="red",width=30,height=1,font=("微软雅黑",15))
+            self.change_pass_text = Listbox(self.change_pass_windows,bg="#222",fg="red",width=30,height=1,font=("微软雅黑",15),relief="flat")
             self.change_pass_text.place(x=50,y=200)
 
+    def forget_pass_btn_state(self):
+        self.forget_pass_btn.config(state=NORMAL)
+        self.forget_pass_windows.destroy()
     # 忘记密码
     def forget_password(self):
+        self.forget_pass_btn.config(state=DISABLED)
         self.forget_pass_windows = Toplevel(self.windows)
         self.forget_pass_windows.wm_attributes('-topmost',1)
         self.forget_pass_windows.resizable(False,False)
@@ -370,9 +440,18 @@ class Login(Sqlite):    # 替换Mysql
         find_inverification_code = Entry(self.forget_pass_windows,textvariable=self.find_code,font=("微软雅黑",20),bg="#222",relief="solid",width=5)
         find_inverification_code.place(x=200,y=190)
         find_btn = Button(self.forget_pass_windows,text="更改密码",font=("微软雅黑",15),relief="solid",activebackground="#222",bg="#222",fg="#FFF",command=self.change_password).place(x=450,y=180)
-        find_code_btn = Button(self.forget_pass_windows,text="发送",font=("微软雅黑",10),relief="solid",activebackground="#222",bg="#222",fg="#FFF",command=self.forget_send_email).place(x=300,y=190)
-        self.find_text = Listbox(self.forget_pass_windows,bg="#222",fg="red",width=30,height=1,font=("微软雅黑",15))
+        self.find_code_btn = Button(self.forget_pass_windows,text="发送",font=("微软雅黑",10),relief="solid",activebackground="#222",bg="#222",fg="#FFF",command=self.forget_send_email)
+        self.find_code_btn.place(x=300,y=190)
+        self.find_text = Listbox(self.forget_pass_windows,bg="#222",fg="red",width=30,height=1,font=("微软雅黑",15),relief="flat")
         self.find_text.place(x=50,y=250)
+        self.forget_pass_windows.protocol("WM_DELETE_WINDOW",self.forget_pass_btn_state)
+    # 退出提示
+    def main_windows_exit(self):
+        exit_or_notexit = messagebox.askyesno(message="确定要离开了吗?")
+        if exit_or_notexit:
+            self.windows.quit()
+        else:
+            pass
 
     def main(self):
         self.windows.iconbitmap(default="img/head.ico")
@@ -392,7 +471,7 @@ class Login(Sqlite):    # 替换Mysql
             pass
         else:
             self.windows.overrideredirect(True)    # 去除边框
-            exit_btn = Button(self.windows, text="Exit", command=self.windows.quit, relief="flat", fg="#FFFFFF",bg="#222",font=("楷体",15)).place(
+            self.exit_btn = Button(self.windows, text="Exit", command=self.main_windows_exit, relief="flat", fg="#FFFFFF",bg="#222",font=("楷体",15)).place(
                 x=10, y=0)    # Windows环境下使用了overrideredirect之后就没有边框了,自己弄一个退出按钮~
         image = PhotoImage(file="img/Welcome.png")    # 设置欢迎界面
         img = Label(self.windows,image=image,width=700,bg="#222").place(x=130,y=-30)
@@ -405,12 +484,17 @@ class Login(Sqlite):    # 替换Mysql
         self.var_pass_input = StringVar()
         inpass = Entry(show="❤",textvariable=self.var_pass_input,font=("宋体",30),relief="solid",bg="#222")
         inpass.place(x=300,y=300)
-        forget_pass_btn = Button(self.windows,text="forget password?",font=("楷体",10),relief="solid",bg="#222",fg="#FFF",command=self.forget_password,activebackground="#222").place(x=580,y=350)
-        btn = Button(self.windows,text="Login",command=self.user_login,font=("宋体",20),relief="flat",bg="#222",fg="#fff",activebackground="#222").place(x=300,y=400)
-        btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="flat",bg="#222",fg="#fff",activebackground="#222").place(x=500, y=400)
+        self.forget_pass_btn = Button(self.windows,text="forget password?",font=("楷体",10),relief="solid",bg="#222",fg="#FFF",command=self.forget_password,activebackground="#222")
+        self.forget_pass_btn.place(x=580,y=350)
+        self.login_btn = Button(self.windows,text="Login",command=self.user_login,font=("宋体",20),relief="flat",bg="#222",fg="#fff",activebackground="#222")
+        self.login_btn.place(x=300,y=400)
+        self.sgin_btn = Button(self.windows, text="Sign up", command=self.user_sign_up, font=("宋体", 20),relief="flat",bg="#222",fg="#fff",activebackground="#222")
+        self.sgin_btn.place(x=500, y=400)
         version = Label(self.windows,text="版本：V3.0.1",bg="#222",fg="#FFF").place(x=0,y=480)
-        aboutme = Button(self.windows,text="关于我",bg="#222",fg="#FFF",relief="flat",activebackground="#222",command=self.aboutme).place(x=80,y=477)
-        feedback = Button(self.windows,text="反馈",bg="#222",fg="#FFF",relief="flat",activebackground="#222",command=self.feedback).place(x=135,y=477)
+        self.aboutmes = Button(self.windows,text="关于我",bg="#222",fg="#FFF",relief="flat",activebackground="#222",command=self.aboutme)
+        self.aboutmes.place(x=80,y=477)
+        self.feedbacks = Button(self.windows,text="反馈",bg="#222",fg="#FFF",relief="flat",activebackground="#222",command=self.feedback)
+        self.feedbacks.place(x=135,y=477)
         self.windows.mainloop()
 
 # 游戏界面
@@ -432,6 +516,7 @@ class Gamemain():
         self.gamewindows.title("Python Guess Number Game (V3.0)")
         self.gamewindows.config(bg="#222")
         Label(self.gamewindows,text="欢迎您~"+username).pack()
+        Frame(self.gamewindows)
         self.gamewindows.mainloop()
 
 
