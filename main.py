@@ -239,6 +239,7 @@ class Login(Sqlite):    # 替换Mysql
             self.information_text.delete(0, END)
             self.information_text.config(fg="#FFF")
             self.information_text.insert(END, "用户名'{}',创建成功！快去登录试试吧~~".format(self.var_username.get()))
+            self.sginup_btn.config(state=DISABLED)
 
     # 登录页面
     def user_login(self):
@@ -267,10 +268,11 @@ class Login(Sqlite):    # 替换Mysql
 
     def sign_btn_state(self):
         self.sgin_btn.config(state=NORMAL)
+        self.login_btn.config(state=NORMAL)
         self.sgin_up_windows.destroy()
     # 注册页面
     def user_sign_up(self):
-        # self.login_btn.config(state=DISABLED)  # 点了之后按钮将不可用,防止多次跳出
+        self.login_btn.config(state=DISABLED)  # 点了之后按钮将不可用,防止多次跳出
         self.sgin_btn.config(state=DISABLED)  # 点了之后按钮将不可用,防止多次跳出
         self.sgin_up_windows = Toplevel(self.windows)
         self.sgin_up_windows.wm_attributes('-topmost',1)
@@ -312,7 +314,8 @@ class Login(Sqlite):    # 替换Mysql
         inverification_code.place(x=240,y=230)
         self.code_btn = Button(self.sgin_up_windows,font=("宋体",12),text="发送",bg="#222",width=6,relief="solid",command=self.sgin_send_email)
         self.code_btn.place(x=530,y=170)
-        btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),bg="#222",relief="solid",command=self.check_input_is_ok,activebackground="#222").place(x=430,y=230)
+        self.sginup_btn = Button(self.sgin_up_windows,text=" Sgin ",font=("宋体",20),bg="#222",relief="solid",command=self.check_input_is_ok,activebackground="#222")
+        self.sginup_btn.place(x=430,y=230)
         self.information_text = Listbox(self.sgin_up_windows,bg="#222",fg="red",width=45,height=1,font=("微软雅黑",15),relief="flat")
         self.information_text.place(x=30, y=300)
         self.sgin_up_windows.protocol("WM_DELETE_WINDOW",self.sign_btn_state)
@@ -505,7 +508,30 @@ class Gamemain():
         self.usename = ""
         self.password = ""
 
-    def main(self,username):
+
+    def check_time_threading(self):
+        self.check_times.config(state=DISABLED)
+        self.check_times.config(relief='flat')
+        self.check_times.place(x=40,y=60)
+        def time_time():
+            while True:
+                self.check_times.config(text=time.ctime())
+        th = threading.Thread(target=time_time)
+        th.setDaemon(True)
+        th.start()
+
+    def exit_game_recording(self):
+        self.check_game_recording_btn.config(state=NORMAL)
+        self.check_game_recording_windows.destroy()
+        self.check_game_recording_btn.config(relief='solid')
+
+    def check_game_recording(self):
+        self.check_game_recording_btn.config(state=DISABLED)
+        self.check_game_recording_btn.config(relief='flat')
+        self.check_game_recording_windows = Toplevel(self.gamewindows)
+        self.check_game_recording_windows.protocol('WM_DELETE_WINDOW',self.exit_game_recording)
+
+    def main(self,username="ee"):
         ws = self.gamewindows.winfo_screenwidth()
         hs = self.gamewindows.winfo_screenheight()
         w = 900
@@ -515,8 +541,13 @@ class Gamemain():
         self.gamewindows.geometry("%dx%d+%d+%d" % (w,h,x,y))
         self.gamewindows.title("Python Guess Number Game (V3.0)")
         self.gamewindows.config(bg="#222")
-        Label(self.gamewindows,text="欢迎您~"+username).pack()
-        Frame(self.gamewindows)
+        user_kit_lable = Label(self.gamewindows,width=30,height=10,relief='solid',bg="#222").place(x=5,y=5)
+        # Label(self.gamewindows,width=)
+        Label(self.gamewindows, text="亲爱哒~" + username,bg='#222',fg="#FFF",relief='flat').place(x=45, y=10)
+        self.check_times = Button(self.gamewindows,text='点击查看时间',relief='solid',bg='#222',command=self.check_time_threading)
+        self.check_times.place(x=70,y=60)
+        self.check_game_recording_btn = Button(self.gamewindows,text="查看游戏记录",relief='solid',bg="#222",command=self.check_game_recording,font=("楷体",15))
+        self.check_game_recording_btn.place(x=45,y=100)
         self.gamewindows.mainloop()
 
 
